@@ -1,0 +1,200 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>QRDonationsWidget</class>
+ <widget class="QWidget" name="QRDonationsWidget">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>400</width>
+    <height>500</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>QR Donations</string>
+  </property>
+  <property name="styleSheet">
+   <string notr="true">QWidget {
+    background-color: #2b2b2b;
+    color: #e0e0e0;
+    font-family: 'Segoe UI', Arial, sans-serif;
+}
+
+QLabel#titleLabel {
+    font-size: 18px;
+    font-weight: bold;
+    color: #4CAF50;
+    padding: 10px;
+}
+
+QLabel#qrCodeLabel {
+    background-color: white;
+    border: 2px solid #4CAF50;
+    border-radius: 10px;
+    padding: 15px;
+    min-width: 256px;
+    min-height: 256px;
+    max-width: 300px;
+    max-height: 300px;
+    margin: 0 auto;
+}
+
+QLabel#addressLabel {
+    background-color: #3a3a3a;
+    border: 1px solid #4a4a4a;
+    border-radius: 5px;
+    padding: 10px;
+    margin: 10px 0;
+    font-family: 'Consolas', 'Monaco', monospace;
+    word-wrap: break-word;
+}
+
+QLabel#assetLabel {
+    font-size: 20px;
+    font-weight: bold;
+    color: #4CAF50;
+    margin: 5px 0;
+}
+
+QLabel#balanceLabel {
+    font-size: 16px;
+    color: #4CAF50;
+    margin: 5px 0;
+}
+
+QPushButton {
+    background-color: #4CAF50;
+    border: none;
+    color: white;
+    padding: 8px 16px;
+    text-align: center;
+    text-decoration: none;
+    font-size: 14px;
+    margin: 4px 2px;
+    border-radius: 4px;
+}
+
+QPushButton:hover {
+    background-color: #45a049;
+}
+
+QPushButton:pressed {
+    background-color: #3e8e41;
+}
+
+QComboBox, QLineEdit {
+    background-color: #3a3a3a;
+    border: 1px solid #4a4a4a;
+    color: #e0e0e0;
+    padding: 5px;
+    border-radius: 4px;
+    min-height: 20px;
+}
+
+QComboBox:on, QLineEdit:focus {
+    border: 1px solid #4CAF50;
+}
+
+QCheckBox {
+    color: #e0e0e0;
+    spacing: 5px;
+}
+
+QCheckBox::indicator {
+    width: 16px;
+    height: 16px;
+}
+
+QCheckBox::indicator:unchecked {
+    border: 1px solid #4a4a4a;
+    background: #3a3a3a;
+}
+
+QCheckBox::indicator:checked {
+    border: 1px solid #4CAF50;
+    background: #4CAF50;
+    image: url(:/icons/checkmark.png);
+}
+
+QGroupBox {
+    border: 1px solid #4a4a4a;
+    border-radius: 5px;
+    margin-top: 10px;
+    padding-top: 15px;
+}
+
+QGroupBox::title {
+    subcontrol-origin: margin;
+    left: 10px;
+    padding: 0 5px;
+    color: #4CAF50;
+}</string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <item>
+    <widget class="QLabel" name="titleLabel">
+     <property name="text">
+      <string>Cryptocurrency Donations</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QLabel" name="assetLabel" alignment="Qt::AlignCenter">
+     <property name="text">
+      <string>BTC</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QLabel" name="qrCodeLabel" alignment="Qt::AlignCenter">
+     <property name="text">
+      <string>QR Code</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QLabel" name="addressLabel" alignment="Qt::AlignCenter">
+     <property name="text">
+      <string>Wallet Address</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+     <property name="wordWrap">
+      <bool>true</bool>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QLabel" name="balanceLabel" alignment="Qt::AlignCenter">
+     <property name="text">
+      <string>Balance: 0.0 BTC</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <spacer name="verticalSpacer">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>20</width>
+       <height>40</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+  </layout>
+ </widget>
+ <resources>
+  <include location="../resources/resources.qrc"/>
+ </resources>
+ <connections/>
+</ui>

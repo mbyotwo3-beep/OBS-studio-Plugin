@@ -1,0 +1,20 @@
+<!DOCTYPE RCC>
+<RCC>
+    <qresource prefix="/">
+        <!-- Icons -->
+        <file alias="icons/btc.png">icons/btc.png</file>
+        <file alias="icons/eth.png">icons/eth.png</file>
+        <file alias="icons/ltc.png">icons/ltc.png</file>
+        <file alias="icons/xrp.png">icons/xrp.png</file>
+        <file alias="icons/bch.png">icons/bch.png</file>
+        <file alias="icons/xlm.png">icons/xlm.png</file>
+        <file alias="icons/doge.png">icons/doge.png</file>
+        <file alias="icons/usdt.png">icons/usdt.png</file>
+        <file alias="icons/usdc.png">icons/usdc.png</file>
+        <file alias="icons/sol.png">icons/sol.png</file>
+        <file alias="icons/checkmark.png">icons/checkmark.png</file>
+        
+        <!-- UI assets -->
+        <file>ui/qr-donations.ui</file>
+    </qresource>
+</RCC>
