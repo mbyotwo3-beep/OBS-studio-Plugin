@@ -1,3 +1,156 @@
+name: Release Build
+
+on:
+  release:
+    types: [published]
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    name: Build & Package
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+      fail-fast: false
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+
+      - name: Set up Qt (Windows)
+        if: matrix.os == 'windows-latest'
+        uses: jurplel/install-qt-action@v3
+        with:
+          version: '6.6.2'
+          host: 'windows'
+          target: 'desktop'
+          arch: 'win64_msvc2019_64'
+
+      - name: Install build deps (Ubuntu)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential cmake ninja-build pkg-config qt6-base-dev qt6-base-dev-tools
+
+      - name: Build plugin
+        run: |
+          mkdir -p build
+          cd build
+          cmake .. -DCMAKE_BUILD_TYPE=Release
+          cmake --build . --config Release
+
+      - name: Create installers
+        run: |
+          python scripts/create_installers.py
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: installers-${{ matrix.os }}
+          path: dist/
+
+      - name: Create Release (once)
+        if: matrix.os == 'ubuntu-latest'
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref_name }}
+          release_name: Release ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+
+      - name: Upload Release Assets
+        if: matrix.os == 'ubuntu-latest'
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./dist/obs-qr-donations-${{ github.ref_name }}-${{ matrix.os }}.zip
+          asset_name: obs-qr-donations-${{ github.ref_name }}-${{ matrix.os }}.zip
+          asset_content_type: application/zip
+name: Release Build
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  build-and-upload:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up (Ubuntu)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential cmake ninja-build pkg-config
+          sudo apt-get install -y qt6-base-dev qt6-base-dev-tools
+
+      - name: Set up (Windows)
+        if: matrix.os == 'windows-latest'
+        uses: jurplel/install-qt@v2
+        with:
+          version: '6.6.2'
+          host: 'win'
+          arch: 'x64'
+
+      - name: Configure (Ninja)
+        run: |
+          cmake -S . -B build -G Ninja
+
+      - name: Build
+        run: |
+          cmake --build build --config Release
+
+      - name: Package plugin artifact (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          mkdir -p artifacts
+          PLUGIN_FILE=$(find build -type f -name "obs-qr-donations.*" | head -n 1 || true)
+          if [ -z "$PLUGIN_FILE" ]; then
+            echo "Plugin binary not found"; ls -R build; exit 1
+          fi
+          cp "$PLUGIN_FILE" artifacts/
+          cd artifacts; tar -czf obs-qr-donations-linux.tar.gz .
+
+      - name: Package plugin artifact (Windows)
+        if: matrix.os == 'windows-latest'
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Path artifacts | Out-Null
+          $files = Get-ChildItem -Path build -Recurse -Filter 'obs-qr-donations.*' -File | Select-Object -First 1
+          if (-not $files) { Write-Host 'Plugin binary not found'; Get-ChildItem -Path build -Recurse; exit 1 }
+          Copy-Item $files.FullName -Destination artifacts
+          Compress-Archive -Path artifacts/* -DestinationPath obs-qr-donations-windows.zip -Force
+
+      - name: Create release asset - upload
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            build/artifacts/obs-qr-donations-linux.tar.gz
+            obs-qr-donations-windows.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 name: Release
 
 on:
