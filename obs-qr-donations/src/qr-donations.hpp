@@ -8,7 +8,7 @@
 
 // Forward declarations
 class QRDonationsWidget;
-class DonationEffect;
+// Donation visual effects have been removed to keep the plugin lightweight.
 
 namespace QRDonations {
 
@@ -32,7 +32,8 @@ public slots:
 private:
     obs_source_t *source;
     QRDonationsWidget *widget;
-    std::unique_ptr<DonationEffect> donationEffect;
+    // No visual effect; kept for backwards compatibility in settings
+    // (previously used for particle animations on donation)
     std::string currentAsset;
     std::string currentAddress;
     bool showBalance;

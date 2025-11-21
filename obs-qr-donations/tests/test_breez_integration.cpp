@@ -7,32 +7,22 @@
 class BreezServiceTest : public ::testing::Test {
 protected:
     void SetUp() override {
-        // Initialize test environment
-        int argc = 0;
-        char *argv[] = {0};
-        app = new QCoreApplication(argc, argv);
-        
+        // Use the shared QCoreApplication provided by tests/test_main.cpp
         // Initialize with test configuration
         QString apiKey = qEnvironmentVariable("BREEZ_API_KEY");
         QString sparkUrl = qEnvironmentVariable("SPARK_URL");
         QString sparkKey = qEnvironmentVariable("SPARK_ACCESS_KEY");
-        
+
         if (apiKey.isEmpty() || sparkUrl.isEmpty()) {
             GTEST_SKIP() << "Skipping live tests - missing required environment variables";
         }
-        
+
         service = &BreezService::instance();
-        bool initialized = service->initialize(apiKey, sparkUrl, sparkKey);
+        bool initialized = service->initialize(apiKey, sparkUrl, sparkKey, "bitcoin");
         if (!initialized) {
             GTEST_SKIP() << "Failed to initialize Breez service";
         }
     }
-    
-    void TearDown() override {
-        delete app;
-    }
-    
-    QCoreApplication* app;
     BreezService* service;
 };
 
@@ -61,7 +51,4 @@ TEST_F(BreezServiceTest, TestBalance) {
 
 // Add more test cases as needed
 
-int main(int argc, char **argv) {
-    ::testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
-}
+// test_main.cpp provides main() and QCoreApplication

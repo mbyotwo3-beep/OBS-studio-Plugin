@@ -53,7 +53,9 @@ This project adheres to the [Contributor Covenant](CODE_OF_CONDUCT.md). By parti
    ```bash
    mkdir build
    cd build
-   cmake ..
+   cmake .. -DCMAKE_TOOLCHAIN_FILE=[path-to-vcpkg]/scripts/buildsystems/vcpkg.cmake
+   # Optionally enable Breeze/Spark support by pointing at the Breez SDK
+   # -DBREEZ_SDK_PATH=/path/to/third_party/breez_sdk
    ```
 
 2. Build the plugin:
@@ -133,7 +135,52 @@ To run the tests:
 ```bash
 cd build
 ctest -V
+
+Notes:
+- `test_breez_integration` will require real Breez environment variables and is skipped if not present.
+- `test_breez_stub` validates the stub behavior and runs locally without Breez SDK.
 ```
+
+CMake options useful for testing
+
+- Force using the Breez stub (useful when you don't have the Breez SDK):
+```bash
+cmake .. -DBREEZ_USE_STUB=ON
+```
+
+- If you have the Breez SDK checked out under `third_party/breez_sdk`, point CMake there:
+```bash
+cmake .. -DBREEZ_SDK_PATH=/path/to/third_party/breez_sdk
+```
+
+These options make it easier to test both code paths (stub vs SDK) during development and CI.
+
+### Building & running tests on Windows (PowerShell)
+
+If you are on Windows and don't have CMake installed, you can install it with `winget` or `choco` (choose one):
+
+PowerShell (winget):
+```powershell
+winget install Kitware.CMake
+```
+
+PowerShell (Chocolatey):
+```powershell
+choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System' -y
+```
+
+Then configure and run tests (example using default MSVC generator):
+```powershell
+mkdir build; cd build
+# choose generator that matches your Visual Studio, or use "-G Ninja" if you have Ninja installed
+cmake .. -G "Visual Studio 17 2022" -A x64
+cmake --build . --config Debug
+cmake --build . --config Debug --target run-tests
+```
+
+Notes:
+- If you prefer `Ninja`, install Ninja and run `cmake .. -G Ninja` then `cmake --build .`.
+- If the Breez SDK is not available, `test_breez_send_stub` and `test_breez_stub` run using the stub implementation. `test_breez_integration` will be skipped unless you configure environment variables and SDK.
 
 ## Documentation
 

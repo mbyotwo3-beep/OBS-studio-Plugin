@@ -6,6 +6,8 @@ A native OBS Studio plugin that enables streamers to receive cryptocurrency dona
 
 - ⚡ **Lightning Network Support**: Generate and display Lightning invoices with Breez SDK
 - 🔗 **Bitcoin On-Chain Support**: Display Bitcoin addresses with proper BIP21 URI formatting
+ - 🔗 **Bitcoin On-Chain Support**: Display Bitcoin addresses with proper BIP21 URI formatting
+ - 🌊 **Liquid (L-BTC) Support**: Display Liquid on-chain addresses and generated QR codes; Lightning invoices can be created on Liquid using Breez when supported
 - 🚀 **Multi-Asset Support**: Display QR codes for various cryptocurrencies (Bitcoin, Ethereum, Litecoin, etc.)
 - 🎨 **Customizable Display**: Toggle between Lightning and Bitcoin payment methods
 - 🖼️ **High-Quality QR Codes**: Clean, scalable QR code generation
@@ -36,6 +38,7 @@ A native OBS Studio plugin that enables streamers to receive cryptocurrency dona
 - qrencode library
 - Breez SDK (included)
 - Spark wallet (for Lightning Network)
+   - Note: Breez SDK is optional. If the Breez SDK is not present the plugin will still build and work with Bitcoin on-chain addresses; Lightning/Spark features require the Breez SDK to be available.
 
 ## Building from Source
 
@@ -58,6 +61,8 @@ A native OBS Studio plugin that enables streamers to receive cryptocurrency dona
    mkdir build
    cd build
    cmake .. -DCMAKE_TOOLCHAIN_FILE=[path-to-vcpkg]/scripts/buildsystems/vcpkg.cmake
+       - If building with Breez/Spark support, specify the Breez SDK path:
+          -DBREEZ_SDK_PATH=/path/to/third_party/breez_sdk
    ```
 
 4. Build the plugin:
@@ -69,6 +74,14 @@ A native OBS Studio plugin that enables streamers to receive cryptocurrency dona
    ```
    cmake --install . --config Release
    ```
+   
+Try the Breez test after installing:
+
+1. Add the `QR Donations` source in OBS.
+2. Open source properties and enable Lightning.
+3. Enter your Breez API key and Spark details.
+4. Click "Test Breez Connection" and confirm the success message.
+
 
 ### Linux
 
@@ -98,7 +111,7 @@ A native OBS Studio plugin that enables streamers to receive cryptocurrency dona
    - Click "OK"
 
 2. **Configure Lightning Network (Recommended)**:
-   - Enable "Use Lightning Network"
+   - Enable "Use Lightning Network" (requires Breez SDK)
    - Enter your Breez API key
    - Set your Spark wallet connection details
    - Configure default donation amount (optional)
@@ -131,6 +144,16 @@ A native OBS Studio plugin that enables streamers to receive cryptocurrency dona
 - Customize invoice expiration time
 - Set minimum/maximum donation amounts
 - Add custom memos to invoices
+
+Important: Each user should obtain their own Breez API key (free) and enter it in the `Breez API Key` setting. The plugin will not embed or share developer API keys; this keeps user funds and rate limits isolated and secure.
+
+Important: You cannot enable Lightning without a valid Breez API key. The plugin enforces this: the Lightning toggle will automatically turn off if the API key is empty and a status is shown in the source properties.
+
+
+When Lightning is enabled, fields are added to the source properties for Breez API Key, Spark URL and Spark Access Key.
+
+Test Connection:
+- Use the "Test Breez Connection" button in the source properties to validate your Breez API Key and Spark settings. The test shows a success/failure message and sets the "Breez Test Status" field with the latest result.
 
 ### OBS Integration
 - Add as a browser source or window capture

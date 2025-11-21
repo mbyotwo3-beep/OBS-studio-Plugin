@@ -5,6 +5,8 @@
 #include <QElapsedTimer>
 #include <QPainter>
 
+// DonationEffect has been removed in favor of a minimal UI.
+// This stub remains to keep API compatibility for older code.
 class DonationEffect : public QWidget {
     Q_OBJECT
     

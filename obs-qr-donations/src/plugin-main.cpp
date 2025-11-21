@@ -28,5 +28,5 @@ const char *obs_module_name()
 
 const char *obs_module_description()
 {
-    return "Displays QR codes for receiving cryptocurrency donations with multi-asset support";
+    return "Displays QR codes for receiving Bitcoin donations (on-chain and Lightning via Breez)";
 }

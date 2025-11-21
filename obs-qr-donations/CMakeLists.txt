@@ -13,16 +13,29 @@ find_package(LibOBS REQUIRED)
 find_package(obs-frontend-api REQUIRED)
 
 # Breez SDK setup
+# Allow forcing the stub or overriding detection for easier local testing/CI
+option(BREEZ_USE_STUB "Force using the Breez stub implementation even if the SDK is present" ON)
+option(BREEZ_STUB_SIMULATE "When using the Breez stub, simulate invoice creation and sends for UI testing" ON)
 set(BREEZ_SDK_PATH "${CMAKE_CURRENT_SOURCE_DIR}/third_party/breez_sdk" CACHE PATH "Path to Breez SDK")
 
-if(EXISTS "${BREEZ_SDK_PATH}")
-    add_subdirectory(${BREEZ_SDK_PATH} breez_sdk)
-    set(BREEZ_SDK_FOUND TRUE)
-    message(STATUS "Breez SDK found at ${BREEZ_SDK_PATH}")
-    add_definitions(-DHAVE_BREEZ_SDK)
-else()
-    message(WARNING "Breez SDK not found at ${BREEZ_SDK_PATH}. Spark wallet features will be disabled.")
+if(BREEZ_USE_STUB)
+    message(WARNING "BREEZ_USE_STUB is ON — forcing use of the Breez stub implementation")
     set(BREEZ_SDK_FOUND FALSE)
+else()
+    if(EXISTS "${BREEZ_SDK_PATH}")
+        add_subdirectory(${BREEZ_SDK_PATH} breez_sdk)
+        set(BREEZ_SDK_FOUND TRUE)
+        message(STATUS "Breez SDK found at ${BREEZ_SDK_PATH}")
+        add_compile_definitions(HAVE_BREEZ_SDK)
+    else()
+        message(WARNING "Breez SDK not found at ${BREEZ_SDK_PATH}. Spark wallet features will be disabled.")
+        set(BREEZ_SDK_FOUND FALSE)
+    endif()
+endif()
+
+if(BREEZ_USE_STUB AND BREEZ_STUB_SIMULATE)
+    add_compile_definitions(BREEZ_STUB_SIMULATE)
+    message(STATUS "Breez stub simulation enabled (BREEZ_STUB_SIMULATE)")
 endif()
 
 # Spark wallet configuration
@@ -75,14 +88,26 @@ add_library(${PLUGIN_NAME} MODULE
     ${RESOURCES}
 )
 
+# Add Breez service source (prefer real SDK; fall back to stub for easier installs)
+if(BREEZ_SDK_FOUND)
+    message(STATUS "Including Breez SDK implementation")
+    target_sources(${PLUGIN_NAME} PRIVATE src/breez-service.cpp)
+else()
+    message(STATUS "Using stub Breez service (Breez SDK not found)")
+    target_sources(${PLUGIN_NAME} PRIVATE src/breez-service-stub.cpp)
+endif()
+
 target_link_libraries(${PLUGIN_NAME} PRIVATE
     Qt6::Widgets
     Qt6::Svg
     Qt6::Network
     OBS::libobs
     OBS::frontend-api
-    ${BREEZ_SDK_LIBRARIES}
 )
+
+if(BREEZ_SDK_FOUND)
+    target_link_libraries(${PLUGIN_NAME} PRIVATE ${BREEZ_SDK_LIBRARIES})
+endif()
 
 # Set output directory for the plugin
 set_target_properties(${PLUGIN_NAME} PROPERTIES

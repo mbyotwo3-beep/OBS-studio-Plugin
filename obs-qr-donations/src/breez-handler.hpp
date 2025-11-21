@@ -11,6 +11,8 @@ class SDK;
 struct PaymentReceivedEvent;
 }
 
+// Deprecated: use BreezService as the single entrypoint to the Breez SDK.
+// BreezHandler remains as a stub for compatibility but does not perform SDK operations.
 class BreezHandler : public QObject {
     Q_OBJECT
     

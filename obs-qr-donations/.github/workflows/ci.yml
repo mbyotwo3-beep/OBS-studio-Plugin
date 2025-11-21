@@ -1,0 +1,89 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up CMake and build tools (Ubuntu)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential cmake ninja-build pkg-config
+          sudo apt-get install -y qt6-base-dev qt6-base-dev-tools
+
+      - name: Set up Qt (Windows)
+        if: matrix.os == 'windows-latest'
+        uses: jurplel/install-qt@v2
+        with:
+          version: '6.6.2'
+          host: 'win'
+          arch: 'x64'
+
+      - name: Configure (Ninja)
+        run: |
+          cmake -S . -B build -G Ninja
+
+      - name: Build
+        run: |
+          cmake --build build --config Release
+
+      - name: Run tests
+        run: |
+          cmake --build build --config Release --target run-tests || ctest --test-dir build --output-on-failure
+
+      - name: Package plugin artifact (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          set -e
+          mkdir -p artifacts
+          # Find built plugin artifact (shared object) and copy to artifacts
+          PLUGIN_FILE=$(find build -type f -name "obs-qr-donations.*" | head -n 1 || true)
+          if [ -z "$PLUGIN_FILE" ]; then
+            echo "Plugin binary not found, listing build tree:"; ls -R build || true
+            exit 1
+          fi
+          echo "Found plugin: $PLUGIN_FILE"
+          cp "$PLUGIN_FILE" artifacts/
+          cd artifacts
+          tar -czf obs-qr-donations-linux.tar.gz .
+
+      - name: Upload Linux artifact
+        if: matrix.os == 'ubuntu-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: obs-qr-donations-linux
+          path: artifacts/obs-qr-donations-linux.tar.gz
+
+      - name: Package plugin artifact (Windows)
+        if: matrix.os == 'windows-latest'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          New-Item -ItemType Directory -Path artifacts | Out-Null
+          $files = Get-ChildItem -Path build -Recurse -Filter 'obs-qr-donations.*' -File | Select-Object -First 1
+          if (-not $files) {
+            Write-Host 'Plugin binary not found in build tree.'
+            Get-ChildItem -Path build -Recurse
+            exit 1
+          }
+          Write-Host "Found plugin: $($files.FullName)"
+          Copy-Item $files.FullName -Destination artifacts
+          Compress-Archive -Path artifacts/* -DestinationPath obs-qr-donations-windows.zip -Force
+
+      - name: Upload Windows artifact
+        if: matrix.os == 'windows-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: obs-qr-donations-windows
+          path: obs-qr-donations-windows.zip

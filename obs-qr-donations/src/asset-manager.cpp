@@ -15,19 +15,10 @@ void AssetManager::initialize() {
         return;
     }
     
-    // Add supported assets
-    // Format: id, name, symbol, decimals, qrPrefix, iconPath
+    // Support Bitcoin and Liquid to start — Lightning invoices are created using Breez
     assets = {
         {"BTC", "Bitcoin", "₿", 8, "bitcoin:", "qrc:/icons/btc.png"},
-        {"ETH", "Ethereum", "Ξ", 18, "ethereum:", "qrc:/icons/eth.png"},
-        {"LTC", "Litecoin", "Ł", 8, "litecoin:", "qrc:/icons/ltc.png"},
-        {"XRP", "Ripple", "XRP", 6, "ripple:", "qrc:/icons/xrp.png"},
-        {"BCH", "Bitcoin Cash", "BCH", 8, "bitcoincash:", "qrc:/icons/bch.png"},
-        {"XLM", "Stellar", "XLM", 7, "stellar:", "qrc:/icons/xlm.png"},
-        {"DOGE", "Dogecoin", "Ð", 8, "dogecoin:", "qrc:/icons/doge.png"},
-        {"USDT", "Tether", "USDT", 6, "tether:", "qrc:/icons/usdt.png"},
-        {"USDC", "USD Coin", "USDC", 6, "ethereum:", "qrc:/icons/usdc.png"},
-        {"SOL", "Solana", "◎", 9, "solana:", "qrc:/icons/sol.png"}
+        {"L-BTC", "Liquid Bitcoin", "ŁBTC", 8, "liquid:", "qrc:/icons/btc.png"}
     };
     
     // Create index for faster lookups

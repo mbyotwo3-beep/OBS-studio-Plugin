@@ -1,53 +1,31 @@
+// BreezHandler removed - use BreezService instead.
+// This file remains as a lightweight stub so older code that included
+// breez-handler headers will still compile. Behavior is no-op.
+
 #include "breez-handler.hpp"
-#include <QStandardPaths>
-#include <QDir>
 #include <QDebug>
 
-// Breez SDK includes
-#include <breez_sdk/breez_sdk.h>
-
-using namespace breez_sdk;
+using namespace std;
 
 BreezHandler& BreezHandler::instance() {
     static BreezHandler instance;
     return instance;
 }
 
-BreezHandler::BreezHandler(QObject *parent)
+BreezHandler::BreezHandler(QObject* parent)
     : QObject(parent)
-    , m_initialized(false)
-    , m_workingDir(QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) + "/breez") {
-    
-    // Ensure working directory exists
-    QDir().mkpath(m_workingDir);
-    
-    // Set up polling timer for payment checks
-    connect(&m_pollingTimer, &QTimer::timeout, this, &BreezHandler::checkForPayments);
-    m_pollingTimer.start(5000); // Check every 5 seconds
+{
+    qInfo() << "BreezHandler stub initialized. Use BreezService for SDK interactions.";
 }
 
-BreezHandler::~BreezHandler() {
-    m_pollingTimer.stop();
-    // Clean up Breez SDK
-    if (m_sdk) {
-        // Properly shut down the SDK
-    }
-}
+BreezHandler::~BreezHandler() = default;
 
 bool BreezHandler::initialize(const QString& apiKey, const QString& workingDir) {
-    if (m_initialized) {
-        return true;
-    }
-    
-    if (!workingDir.isEmpty()) {
-        m_workingDir = workingDir;
-        QDir().mkpath(m_workingDir);
-    }
-    
-    m_apiKey = apiKey;
-    
-    try {
-        // Initialize Breez SDK configuration
+    Q_UNUSED(apiKey)
+    Q_UNUSED(workingDir)
+    qDebug() << "BreezHandler::initialize called on stub (no-op)";
+    emit serviceReady(false);
+    return false;
         Config config;
         config.working_dir = m_workingDir.toStdString();
         config.api_key = m_apiKey.toStdString();

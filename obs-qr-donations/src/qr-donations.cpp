@@ -1,7 +1,7 @@
 #include "qr-donations.hpp"
 #include "qr-widget.hpp"
-#include "donation-effect.hpp"
 #include "asset-manager.hpp"
+#include "breez-service.hpp"
 #include <QMainWindow>
 #include <QMessageBox>
 #include <QApplication>
@@ -43,15 +43,8 @@ QRDonationsSource::QRDonationsSource(obs_data_t *settings, obs_source_t *source)
     // Create the widget
     widget = new QRDonationsWidget(mainWindow);
     
-    // Create donation effect overlay
-    donationEffect = std::make_unique<DonationEffect>(mainWindow);
-    donationEffect->setWindowFlags(Qt::Tool | Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint);
-    donationEffect->setAttribute(Qt::WA_TranslucentBackground);
-    donationEffect->setAttribute(Qt::WA_TransparentForMouseEvents);
-    
-    // Set initial size to cover the whole screen
-    QRect screenGeometry = QApplication::desktop()->screenGeometry();
-    donationEffect->setGeometry(screenGeometry);
+    // Visual donation effects removed for a cleaner, lightweight plugin
+    donationEffect = nullptr;
     
     // Load settings
     UpdateSource(this, settings);
@@ -64,51 +57,44 @@ QRDonationsSource::~QRDonationsSource()
         widget->deleteLater();
     }
     
-    if (donationEffect) {
-        donationEffect->hide();
-    }
+    // No visual effects to tear down
 }
 
 void QRDonationsSource::update(obs_data_t *settings)
 {
     currentAsset = obs_data_get_string(settings, "asset");
-    currentAddress = obs_data_get_string(settings, "address");
+    QString btcAddr = obs_data_get_string(settings, "bitcoin_address");
+    QString liquidAddr = obs_data_get_string(settings, "liquid_address");
+
+    // Map selected asset to the corresponding on-chain address
+    if (QString::fromStdString(currentAsset).compare("L-BTC", Qt::CaseInsensitive) == 0) {
+        currentAddress = liquidAddr.toStdString();
+    } else {
+        currentAddress = btcAddr.toStdString();
+    }
     showBalance = obs_data_get_bool(settings, "show_balance");
     showAssetSymbol = obs_data_get_bool(settings, "show_asset_symbol");
     enableEffects = obs_data_get_bool(settings, "enable_effects");
     
     if (widget) {
         widget->setAddress(currentAsset, currentAddress);
+        // Set both on-chain addresses (if any) so tabs show appropriate values
+        widget->setBitcoinAddress(btcAddr.toStdString());
+        widget->setLiquidAddress(liquidAddr.toStdString());
         widget->setDisplayOptions(showBalance, showAssetSymbol);
     }
     
     // Update effect settings
-    if (donationEffect) {
-        // Set effect color based on currency
-        QColor effectColor(255, 215, 0); // Default gold color
-        if (currentAsset == "BTC") effectColor = QColor(247, 147, 26);
-        else if (currentAsset == "ETH") effectColor = QColor(78, 93, 109);
-        else if (currentAsset == "LTC") effectColor = QColor(191, 191, 191);
-        
-        donationEffect->setEffectColor(effectColor);
-    }
+    // No donation effect customization; the plugin now focuses on QR display only.
 }
 
 void QRDonationsSource::onDonationReceived(double amount, const QString &currency) {
-    if (!enableEffects || !donationEffect) {
-        return;
+    // Effects disabled - simple notification only
+    if (enableEffects && widget) {
+        // If effects are enabled we still want to show a non-blocking notification
+        qint64 amountSats = static_cast<qint64>(amount * 100000000.0);
+        widget->onPaymentReceived(amountSats, QString(), currency);
     }
-    
-    // Position the effect over the widget if it's visible
-    if (widget && widget->isVisible()) {
-        QPoint globalPos = widget->mapToGlobal(QPoint(0, 0));
-        donationEffect->setGeometry(widget->width(), widget->height(), 
-                                  widget->width(), widget->height());
-        donationEffect->move(globalPos);
-    }
-    
-    // Trigger the effect
-    donationEffect->triggerEffect(amount, currency);
 }
 
 void QRDonationsSource::showProperties()
@@ -186,11 +172,15 @@ void DestroySource(void *data)
 void GetSourceDefaults(obs_data_t *settings)
 {
     obs_data_set_default_string(settings, "asset", "BTC");
-    obs_data_set_default_string(settings, "address", "");
+    obs_data_set_default_string(settings, "bitcoin_address", "");
+    obs_data_set_default_string(settings, "liquid_address", "");
+    obs_data_set_default_string(settings, "breez_test_status", "");
     obs_data_set_default_bool(settings, "show_balance", true);
     obs_data_set_default_bool(settings, "show_asset_symbol", true);
     obs_data_set_default_bool(settings, "enable_effects", true);
 }
+
+static bool TestBreezConnection(obs_properties_t *props, obs_property_t *property, obs_data_t *settings);
 
 obs_properties_t *GetSourceProperties(void *data)
 {
@@ -215,8 +205,15 @@ obs_properties_t *GetSourceProperties(void *data)
     // Address input
     obs_properties_add_text(
         props,
-        "address",
-        "Wallet Address",
+        "bitcoin_address",
+        "Bitcoin (on-chain) Address",
+        OBS_TEXT_DEFAULT
+    );
+
+    obs_properties_add_text(
+        props,
+        "liquid_address",
+        "Liquid (on-chain) Address",
         OBS_TEXT_DEFAULT
     );
     
@@ -239,6 +236,58 @@ obs_properties_t *GetSourceProperties(void *data)
         "enable_effects",
         "Enable Visual Effects on Donation"
     );
+
+    // Breez / Spark (Lightning) settings
+    obs_properties_add_bool(
+        props,
+        "enable_lightning",
+        "Enable Lightning (Breez Spark)"
+    );
+
+    obs_properties_add_text(
+        props,
+        "breez_api_key",
+        "Breez API Key",
+        OBS_TEXT_DEFAULT
+    );
+
+    obs_properties_add_text(
+        props,
+        "spark_url",
+        "Spark Wallet URL",
+        OBS_TEXT_DEFAULT
+    );
+
+    obs_properties_add_text(
+        props,
+        "spark_access_key",
+        "Spark Access Key",
+        OBS_TEXT_DEFAULT
+    );
+
+    // Button to test Breez + Spark connection
+    obs_properties_add_button(
+        props,
+        "test_breez_connection",
+        "Test Breez Connection",
+        TestBreezConnection
+    );
+
+    // Read-only field to show the result of the last Breez connection test
+    obs_properties_add_text(
+        props,
+        "breez_test_status",
+        "Breez Test Status",
+        OBS_TEXT_DEFAULT
+    );
+
+    // Read-only status shown after running "Test Breez Connection"
+    obs_properties_add_text(
+        props,
+        "breez_test_status",
+        "Breez Test Status",
+        OBS_TEXT_DEFAULT
+    );
     
     return props;
 }
@@ -249,6 +298,99 @@ void UpdateSource(void *data, obs_data_t *settings)
     if (source) {
         source->update(settings);
     }
+
+    // Handle Breez initialization when enable_lightning toggled
+    bool enableLightning = obs_data_get_bool(settings, "enable_lightning");
+    QString apiKey = obs_data_get_string(settings, "breez_api_key");
+    if (enableLightning && apiKey.isEmpty()) {
+        // Prevent enabling Lightning without an API key; update settings and inform user
+        blog(LOG_WARNING, "[QR Donations] Breez API key required to enable Lightning");
+        obs_data_set_bool(settings, "enable_lightning", false);
+        if (source && source->widget) {
+            source->widget->setLightningStatus("Please provide a Breez API key before enabling Lightning.", false);
+        }
+        // Do not initialize Breez if apiKey is empty
+        return;
+    }
+    if (enableLightning) {
+        QString apiKey = obs_data_get_string(settings, "breez_api_key");
+        QString sparkUrl = obs_data_get_string(settings, "spark_url");
+        QString sparkKey = obs_data_get_string(settings, "spark_access_key");
+        QString asset = obs_data_get_string(settings, "asset");
+        QString network = (asset.compare("L-BTC", Qt::CaseInsensitive) == 0) ? QString("liquid") : QString("bitcoin");
+
+        // Initialize Breez service (won't do anything if SDK not compiled in)
+        bool initialized = BreezService::instance().initialize(apiKey, sparkUrl, sparkKey, network);
+        if (initialized) {
+            // Connect to payment received UI notification (only once)
+                static bool connected = false;
+            if (!connected) {
+                QObject::connect(&BreezService::instance(), &BreezService::paymentReceived,
+                                 static_cast<QRDonationsSource *>(data)->widget,
+                                 &QRDonationsWidget::onPaymentReceived,
+                                 Qt::QueuedConnection);
+                    QObject::connect(&BreezService::instance(), &BreezService::serviceReady,
+                                     static_cast<QRDonationsSource *>(data)->widget,
+                                     [data](bool ready) {
+                                         auto *src = static_cast<QRDonationsSource *>(data);
+                                         if (src && src->widget) {
+                                             if (ready)
+                                                 src->widget->setLightningStatus("Lightning ready", true);
+                                             else
+                                                 src->widget->setLightningStatus("Lightning not ready", false);
+                                         }
+                                     },
+                                     Qt::QueuedConnection);
+
+                    QObject::connect(&BreezService::instance(), &BreezService::errorOccurred,
+                                     static_cast<QRDonationsSource *>(data)->widget,
+                                     [data](const QString &msg) {
+                                         auto *src = static_cast<QRDonationsSource *>(data);
+                                         if (src && src->widget) {
+                                             src->widget->setLightningStatus(msg, false);
+                                         }
+                                     },
+                                     Qt::QueuedConnection);
+                connected = true;
+            }
+        }
+    }
+}
+
+// Test Breez connection callback
+static bool TestBreezConnection(obs_properties_t *props, obs_property_t *property, obs_data_t *settings)
+{
+    Q_UNUSED(props);
+    Q_UNUSED(property);
+
+    QString apiKey = obs_data_get_string(settings, "breez_api_key");
+    QString sparkUrl = obs_data_get_string(settings, "spark_url");
+    QString sparkKey = obs_data_get_string(settings, "spark_access_key");
+
+    if (apiKey.isEmpty()) {
+        blog(LOG_WARNING, "[QR Donations] Breez API key is empty; cannot test connection");
+        QMainWindow *mw = static_cast<QMainWindow *>(obs_frontend_get_main_window());
+        QMessageBox::warning(mw, "Breez Test", "Breez API key is required to test the connection.");
+        return false;
+    }
+
+    // This will call the initialization flow which will emit serviceReady or errorOccurred
+    QString asset = obs_data_get_string(settings, "asset");
+    QString network = (asset.compare("L-BTC", Qt::CaseInsensitive) == 0) ? QString("liquid") : QString("bitcoin");
+    bool ok = BreezService::instance().initialize(apiKey, sparkUrl, sparkKey, network);
+    if (!ok) {
+        blog(LOG_WARNING, "[QR Donations] Breez initialization (test) failed");
+        QMainWindow *mw = static_cast<QMainWindow *>(obs_frontend_get_main_window());
+        QMessageBox::critical(mw, "Breez Test", "Breez initialization failed. Check API key and Spark settings.");
+        obs_data_set_string(settings, "breez_test_status", "Failed: invalid credentials or SDK not present");
+    } else {
+        QMainWindow *mw = static_cast<QMainWindow *>(obs_frontend_get_main_window());
+        QMessageBox::information(mw, "Breez Test", "Breez initialized successfully. Lightning should now be available.");
+        obs_data_set_string(settings, "breez_test_status", "Success: Breez initialized");
+    }
+
+    // UI will be updated by serviceReady / errorOccurred connected earlier
+    return ok;
 }
 
 void RenderSource(void *data, gs_effect_t *effect)

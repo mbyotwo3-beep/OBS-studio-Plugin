@@ -24,8 +24,8 @@ public:
     explicit QRDonationsWidget(QWidget *parent = nullptr);
     ~QRDonationsWidget() override;
     
-    // Set wallet information
-    void setWalletInfo(const QString &asset, const QString &nodeUrl, const QString &apiKey);
+    // Set wallet address & asset
+    void setAddress(const std::string &asset, const std::string &address);
     
     // Set display options
     void setDisplayOptions(bool showBalance, bool showAssetSymbol);
@@ -39,12 +39,20 @@ public:
     // Get the current payment requests
     QString getLightningInvoice() const;
     QString getBitcoinAddress() const;
+    QString getLiquidAddress() const;
     
     // Get the current amount in satoshis
     qint64 getAmountSats() const;
     
-    // Set the amount for invoices
-    void setAmountSats(qint64 amount);
+    // Set the amount for invoices (in satoshis)
+    void setAmount(qint64 amountSats);
+
+    // Set per-network addresses
+    void setBitcoinAddress(const std::string &address);
+    void setLiquidAddress(const std::string &address);
+
+    // Set display of Lightning/Breez service status in the widget
+    void setLightningStatus(const QString &status, bool ok = true);
     
 public slots:
     // Handle payment received
@@ -52,6 +60,9 @@ public slots:
     
     // Handle stream status changes
     void onStreamStatusChanged(bool streaming);
+    
+    // Open the manage wallet dialog for outgoing sends
+    void onManageWalletClicked();
     
 protected:
     void resizeEvent(QResizeEvent *event) override;
@@ -62,6 +73,7 @@ private slots:
     void onGenerateClicked();
     void onCopyLightningClicked();
     void onCopyBitcoinClicked();
+    void onCopyLiquidClicked();
     void onTabChanged(int index);
     
 private:
@@ -72,6 +84,7 @@ private:
     struct Private {
         std::string currentAsset;
         std::string bitcoinAddress;
+        std::string liquidAddress;
         std::string lightningInvoice;
         bool showBalance = true;
         bool showAssetSymbol = true;
@@ -82,13 +95,18 @@ private:
         QTabWidget *tabWidget = nullptr;
         QLabel *lightningQRLabel = nullptr;
         QLabel *bitcoinQRLabel = nullptr;
+        QLabel *liquidQRLabel = nullptr;
         QLabel *lightningInvoiceLabel = nullptr;
         QLabel *bitcoinAddressLabel = nullptr;
+        QLabel *liquidAddressLabel = nullptr;
         QLabel *assetLabel = nullptr;
         QLabel *balanceLabel = nullptr;
         QLabel *amountHintLabel = nullptr;
+        QLabel *currentMethodLabel = nullptr; // shows which method (Liquid/Lightning/Bitcoin) is currently displayed
+        QLabel *simulationLabel = nullptr; // shows when running in simulated stub mode
         QPushButton *copyLightningBtn = nullptr;
         QPushButton *copyBitcoinBtn = nullptr;
+        QPushButton *copyLiquidBtn = nullptr;
         
         // Loading state
         QLabel *lightningLoadingLabel = nullptr;
@@ -96,6 +114,8 @@ private:
         bool isLoading = false;
         
         QVBoxLayout *mainLayout = nullptr;
+        QTimer *rotationTimer = nullptr;
+        int rotationIndex = 0;
     };
     std::unique_ptr<Private> d;
 };

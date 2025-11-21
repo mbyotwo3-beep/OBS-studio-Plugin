@@ -16,6 +16,7 @@ The OBS QR Donations Plugin provides a comprehensive API for integrating cryptoc
 ## BreezService API
 
 The `BreezService` class handles the Lightning Network integration using the Breez SDK.
+Note: Breez SDK support is optional for building the plugin. If not enabled the plugin will still work for on-chain Bitcoin addresses.
 
 ### Initialization
 
@@ -24,11 +25,18 @@ The `BreezService` class handles the Lightning Network integration using the Bre
 BreezService& breez = BreezService::instance();
 
 // Initialize with your credentials
+// Optional network argument: "bitcoin" or "liquid" (default "bitcoin")
 bool success = breez.initialize(
     "your_api_key",     // Breez API key
     "https://spark:9737", // Spark wallet URL
     "your_access_key"    // Spark access key
+    , "bitcoin"
 );
+
+Tip: Use the `Test Breez Connection` button in the source properties to validate credentials before enabling Lightning.
+
+Test result:
+- Running Test Breez Connection will set the `breez_test_status` field in the source properties. This is persisted in OBS source settings and can be used to display current state or for diagnostics.
 ```
 
 ### Methods

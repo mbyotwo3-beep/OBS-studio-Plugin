@@ -19,8 +19,10 @@ public:
     static BreezService& instance();
     
     // Initialize the Breez service with Spark wallet
-    bool initialize(const QString& apiKey, const QString& sparkUrl, 
-                   const QString& sparkAccessKey);
+    // network: "bitcoin" (default) or "liquid"
+    bool initialize(const QString& apiKey, const QString& sparkUrl,
+                   const QString& sparkAccessKey,
+                   const QString& network = "bitcoin");
     
     // Create a new invoice
     QString createInvoice(qint64 amountSats, const QString& description = "", 
@@ -37,6 +39,18 @@ public:
     
     // Get payment history
     QVariantList paymentHistory() const;
+
+    // Outgoing payments / withdrawals
+    // Pay a Lightning invoice (bolt11) — returns true if send operation started
+    bool sendLightningPayment(const QString &bolt11);
+
+    // Send on-chain (bitcoin or liquid) to an address. Returns true if operation started
+    bool sendOnChain(const QString &address, qint64 amountSats, const QString &network = "bitcoin");
+
+signals:
+    void sendCompleted(bool ok, const QString &txid_or_err);
+    
+    // Deprecated: old BreezHandler is removed - use BreezService.
     
 signals:
     void paymentReceived(qint64 amountSats, const QString& paymentHash, const QString& memo);
