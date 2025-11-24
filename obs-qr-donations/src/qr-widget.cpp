@@ -2,6 +2,7 @@
 #include "qr-generator.hpp"
 #include "breez-service.hpp"
 #include "manage-wallet-dialog.hpp"
+#include "donation-effect.hpp"
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QLabel>
@@ -394,14 +395,41 @@ void QRDonationsWidget::updateQRCode() {
         return;
     }
     
+    // Calculate responsive QR code size based on widget dimensions and aspect ratio
+    int widgetWidth = width();
+    int widgetHeight = height();
+    
+    // Determine aspect ratio and calculate optimal QR size
+    double aspectRatio = static_cast<double>(widgetWidth) / widgetHeight;
+    int qrSize;
+    
+    if (aspectRatio > 1.7) {
+        // Wide aspect (21:9, etc.) - use height-based sizing
+        qrSize = qMin(static_cast<int>(widgetHeight * 0.6), widgetWidth / 3);
+    } else if (aspectRatio < 0.7) {
+        // Vertical aspect (9:16, etc.) - use width-based sizing
+        qrSize = static_cast<int>(widgetWidth * 0.7);
+    } else {
+        // Standard aspect (16:9, 4:3, etc.) - balanced sizing
+        qrSize = qMin(widgetWidth, widgetHeight) / 2;
+    }
+    
+    // Ensure QR code stays within scannable range (150-800 pixels)
+    qrSize = qMax(150, qMin(800, qrSize));
+    
+    // Apply padding
+    int padding = 20;
+    int finalSize = qrSize - padding;
+    
     // Update Lightning QR code
     if (!d->lightningInvoice.empty()) {
         QImage lightningQR = QRGenerator::generateQRCode(
             d->lightningInvoice,
-            d->lightningQRLabel->width() - 20,
-            d->lightningQRLabel->height() - 20
+            finalSize,
+            finalSize
         );
         d->lightningQRLabel->setPixmap(QPixmap::fromImage(lightningQR));
+        d->lightningQRLabel->setFixedSize(qrSize, qrSize);
     }
     
     // Update Bitcoin QR code
@@ -416,10 +444,11 @@ void QRDonationsWidget::updateQRCode() {
         
         QImage bitcoinQR = QRGenerator::generateQRCode(
             qrText.toStdString(),
-            d->bitcoinQRLabel->width() - 20,
-            d->bitcoinQRLabel->height() - 20
+            finalSize,
+            finalSize
         );
         d->bitcoinQRLabel->setPixmap(QPixmap::fromImage(bitcoinQR));
+        d->bitcoinQRLabel->setFixedSize(qrSize, qrSize);
     }
 
     // Update Liquid QR code
@@ -434,11 +463,18 @@ void QRDonationsWidget::updateQRCode() {
 
         QImage liquidQR = QRGenerator::generateQRCode(
             qrText.toStdString(),
-            d->liquidQRLabel->width() - 20,
-            d->liquidQRLabel->height() - 20
+            finalSize,
+            finalSize
         );
         d->liquidQRLabel->setPixmap(QPixmap::fromImage(liquidQR));
+        d->liquidQRLabel->setFixedSize(qrSize, qrSize);
     }
+    
+    // Update font sizes based on widget size for better readability
+    int baseFontSize = qMax(10, qMin(16, widgetHeight / 40));
+    QFont labelFont = d->amountHintLabel->font();
+    labelFont.setPointSize(baseFontSize);
+    d->amountHintLabel->setFont(labelFont);
     
     // Update amount hint
     if (d->amountSats > 0) {
@@ -532,19 +568,28 @@ void QRDonationsWidget::setLightningStatus(const QString &status, bool ok) {
 }
 
 void QRDonationsWidget::onPaymentReceived(qint64 amountSats, const QString &paymentHash, const QString &memo) {
-    // Update UI to show the payment
-    QString message = QString("Received %1 sats").arg(amountSats);
-    if (!memo.isEmpty()) {
-        message += QString("\nMemo: %1").arg(memo);
+    // Create and show donation effect
+    DonationEffect *effect = new DonationEffect(this);
+    effect->setParticleCount(qMin(100, qMax(30, static_cast<int>(amountSats / 100)))); // Scale particles with amount
+    effect->setDuration(4000); // 4 seconds
+    
+    // Convert to currency format
+    double btcAmount = amountSats / 100000000.0;
+    QString displayAmount;
+    if (amountSats >= 100000) {
+        displayAmount = QString::number(btcAmount, 'f', 3) + " BTC";
+    } else {
+        displayAmount = QString::number(amountSats) + " sats";
     }
     
-    // Show a non-blocking message
-    QMessageBox *msgBox = new QMessageBox(this);
-    msgBox->setAttribute(Qt::WA_DeleteOnClose);
-    msgBox->setWindowTitle("Payment Received");
-    msgBox->setText(message);
-    msgBox->setIcon(QMessageBox::Information);
-    msgBox->show();
+    effect->show();
+    effect->triggerEffect(amountSats, displayAmount, memo);
+    
+    // Auto-delete after effect completes
+    QTimer::singleShot(5000, effect, &DonationEffect::deleteLater);
+    
+    // Log to console
+    qInfo() << "Payment received:" << amountSats << "sats, hash:" << paymentHash;
     
     // Generate a new invoice for the next payment
     generateInvoices();

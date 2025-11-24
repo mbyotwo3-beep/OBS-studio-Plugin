@@ -2,9 +2,44 @@
 
 A native OBS Studio plugin that enables streamers to receive cryptocurrency donations via QR codes, with built-in Lightning Network support through Breez SDK.
 
+## ✨ New Features
+
+- ⚡ **Lightning Network Support**: Generate and display Lightning invoices with Breez Spark SDK
+- 🎆 **Visual Donation Effects**: Particle animations and notifications when payments are received
+- 📱 **Fully Responsive**: Automatically adapts to any screen size or aspect ratio (16:9, 4:3, 21:9, 9:16)
+- 🎨 **Customizable Display**: Toggle between Lightning, Bitcoin, and Liquid payment methods
+- 💰 **Payment Notifications**: Beautiful color-coded visual effects based on donation amount
+- 🚀 **Easy Installation**: One-click installer script for Windows, Linux, and Mac
+
+## 🚀 Quick Install
+
+### For Users (Easy!)
+
+1. **Download** the latest release
+2. **Run the installer**:
+   - Windows: Double-click `install.bat`
+   - Linux/Mac: Run `./install.sh` in terminal
+3. **Open OBS** and add "QR Donations" source
+4. **Configure** your cryptocurrency addresses
+5. **Done!** Start receiving donations
+
+**See [USER_GUIDE.md](USER_GUIDE.md) for detailed usage instructions.**
+
+### For Developers (Build from Source)
+
+See [BUILD_GUIDE.md](BUILD_GUIDE.md) for complete build instructions.
+
+Quick build:
+```bash
+cmake -B build -S . -DBREEZ_USE_STUB=ON
+cmake --build build --config Release
+install.bat    # Windows
+./install.sh   # Linux/Mac
+```
+
 ## Features
 
-- ⚡ **Lightning Network Support**: Generate and display Lightning invoices with Breez SDK
+- ⚡ **Lightning Network Support**: Instant payments with Breez SDK
 - 🔗 **Bitcoin On-Chain Support**: Display Bitcoin addresses with proper BIP21 URI formatting
  - 🔗 **Bitcoin On-Chain Support**: Display Bitcoin addresses with proper BIP21 URI formatting
  - 🌊 **Liquid (L-BTC) Support**: Display Liquid on-chain addresses and generated QR codes; Lightning invoices can be created on Liquid using Breez when supported
