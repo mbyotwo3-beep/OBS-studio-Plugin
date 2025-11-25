@@ -64,6 +64,36 @@ install.bat    # Windows
 - Litecoin (LTC)
 - Bitcoin Cash (BCH)
 
+## ⚡ Lightning Network (Breez Spark) - No Node Required!
+
+**NEW:** This plugin now supports Lightning payments through Breez Spark - a nodeless Lightning solution that requires **zero configuration** beyond entering your API key!
+
+### Quick Lightning Setup
+
+1. Get your free Breez Spark API key at https://breez.technology
+2. In OBS: Add QR Donations source → Properties
+3. Check ☑ "Enable Lightning Network (Breez Spark - No Node Required)"
+4. Paste your API credentials
+5. Click "Test Lightning Connection"
+6. Done! Start accepting Lightning donations instantly
+
+**See [BREEZ_QUICK_START.md](BREEZ_QUICK_START.md) for 3-minute setup guide**  
+**See [docs/BREEZ_SPARK_GUIDE.md](docs/BREEZ_SPARK_GUIDE.md) for complete documentation**
+
+### Full Lightning Wallet Features
+
+| Feature | Status |
+|---------|--------|
+| Receive Lightning payments | ✅ Automatic |
+| Generate invoices | ✅ On-demand |
+| Send Lightning payments | ✅ Full support |
+| Send on-chain | ✅ Bitcoin & Liquid |
+| Balance tracking | ✅ Real-time |
+| Payment history | ✅ Complete |
+| Multi-network | ✅ BTC & L-BTC |
+
+**No Lightning node required** - Breez Spark handles all complexity automatically!
+
 ## Requirements
 
 - OBS Studio 28.0 or later
@@ -71,9 +101,7 @@ install.bat    # Windows
 - CMake 3.16 or later
 - C++17 compatible compiler
 - qrencode library
-- Breez SDK (included)
-- Spark wallet (for Lightning Network)
-   - Note: Breez SDK is optional. If the Breez SDK is not present the plugin will still build and work with Bitcoin on-chain addresses; Lightning/Spark features require the Breez SDK to be available.
+- **Optional:** Breez SDK for Lightning support (plugin works without it for on-chain only)
 
 ## Building from Source
 

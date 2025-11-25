@@ -45,29 +45,6 @@ Automatic celebration effects:
 - 🎨 Colors based on donation size
 - ⏱️ 4-second animation
 
-## ⚡ Lightning Network Setup (Optional)
-
-Lightning gives you **instant** donations with **tiny fees**!
-
-### Get a Free API Key
-1. Visit https://breez.technology/
-2. Sign up for free API key
-3. Configure your Spark wallet (or use Breez's)
-
-### Enable in Plugin
-1. Right-click QR source → **Properties**
-2. Check **"Enable Lightning"**
-3. Paste your **Breez API Key**
-4. Enter **Spark URL** and **Access Key**
-5. Click **"Test Connection"**
-6. Click **OK**
-
-## 🎨 Customization Tips
-
-### Perfect Sizing
-| Stream Resolution | Recommended Size | Position |
-|------------------|------------------|----------|
-| 1080p | 400 x 600 px | Top-right corner |
 | 720p | 300 x 450 px | Top-right corner |
 | Full screen alert | 1920 x 400 px | Center |
 

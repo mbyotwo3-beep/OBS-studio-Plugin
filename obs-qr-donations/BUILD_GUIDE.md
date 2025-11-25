@@ -230,26 +230,26 @@ Copy `build/libobs-qr-donations.dylib` to:
 
 ## Next Steps
 
-- See [USER_GUIDE.md](USER_GUIDE.md) for usage instructions
-- See [README.md](README.md) for feature overview
-- Get Breez API key from https://breez.technology/ for Lightning support
+### Testing
+1. Build the plugin in stub mode and run the integration test script (`scripts/run_integration_test.bat` on Windows) to verify QR code display.
+2. For full Lightning support, run the end‑to‑end test script (`scripts/run_e2e_test.sh --mode full`) which simulates a donation via the Breez SDK.
+3. Check OBS logs (`Help → Log Files → View Current Log`) for `QR Donations plugin loaded` and `Donation received` messages.
 
-## Common CMake Options
+### Packaging & Release
+1. After a successful build, package the binaries:
+   - Windows: `zip -r obs-qr-donations-windows.zip build/Release/obs-qr-donations.dll README.md LICENSE`
+   - Linux/macOS: `tar czvf obs-qr-donations-linux.tar.gz build/libobs-qr-donations.so README.md LICENSE`
+2. Create a GitHub release tag (e.g., `v1.2.0`) and upload the appropriate archive.
+3. Update the **User Guide** with any new configuration options.
 
-```bash
-cmake -B build -S . \
-  -DBREEZ_USE_STUB=ON \              # Use stub (no real payments)
-  -DBREEZ_STUB_SIMULATE=ON \          # Simulate payments in stub mode
-  -DCMAKE_BUILD_TYPE=Release \        # Release build (optimized)
-  -DLibOBS_DIR=/path/to/obs \         # OBS SDK location
-  -DQt6_DIR=/path/to/qt/cmake/Qt6     # Qt6 location
-```
+### Deployment
+1. Copy the built library to the OBS plugins directory:
+   - Windows: `C:\Program Files\obs-studio\obs-plugins\64bit\`
+   - Linux: `~/.config/obs-studio/plugins/obs-qr-donations/bin/64bit/`
+   - macOS: `~/Library/Application Support/obs-studio/plugins/obs-qr-donations/bin/`
+2. Ensure the file permissions allow OBS to read the library (`chmod 755` on Unix).
+3. Restart OBS and verify the plugin loads and the QR source works.
 
-## Getting Help
-
-If you encounter issues:
-1. Check this guide's **Troubleshooting** section
-2. Review CMake error messages carefully
-3. Check that all prerequisites are installed
-4. Try building in stub mode first
-5. Check OBS plugin development docs: https://obsproject.com/docs/plugins/
+### Final Checks
+- Re‑run the testing steps after deployment.
+- Verify Lightning payments work by performing a small real donation (optional).

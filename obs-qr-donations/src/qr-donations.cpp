@@ -237,57 +237,67 @@ obs_properties_t *GetSourceProperties(void *data)
         "Enable Visual Effects on Donation"
     );
 
-    // Breez / Spark (Lightning) settings
+    // === Lightning Network (Breez SDK - Nodeless) ===
     obs_properties_add_bool(
         props,
         "enable_lightning",
-        "Enable Lightning (Breez Spark)"
+        "⚡ Enable Lightning Network (Breez SDK - Nodeless)"
+    );
+    
+    // Add informational text
+    obs_properties_add_text(
+        props,
+        "lightning_info",
+        "Get your free Breez API key at https://breez.technology",
+        OBS_TEXT_INFO
     );
 
+    // API Key (REQUIRED for Breez SDK)
     obs_properties_add_text(
         props,
         "breez_api_key",
-        "Breez API Key",
-        OBS_TEXT_DEFAULT
+        "Breez API Key (Required)",
+        OBS_TEXT_PASSWORD  // Hide API key for security
+    );
+
+    // === Advanced: Custom Spark Wallet (Optional) ===
+    obs_properties_add_text(
+        props,
+        "spark_info",
+        "Advanced: Only needed if using custom Spark wallet (leave empty for Breez default)",
+        OBS_TEXT_INFO
     );
 
     obs_properties_add_text(
         props,
         "spark_url",
-        "Spark Wallet URL",
+        "Spark Wallet URL (Optional)",
         OBS_TEXT_DEFAULT
     );
 
     obs_properties_add_text(
         props,
         "spark_access_key",
-        "Spark Access Key",
-        OBS_TEXT_DEFAULT
+        "Spark Access Key (Optional)",
+        OBS_TEXT_PASSWORD
     );
 
-    // Button to test Breez + Spark connection
+    // Test button
     obs_properties_add_button(
         props,
         "test_breez_connection",
-        "Test Breez Connection",
+        "🔌 Test Lightning Connection",
         TestBreezConnection
     );
 
-    // Read-only field to show the result of the last Breez connection test
-    obs_properties_add_text(
+    // Status field (read-only)
+    auto *statusProp = obs_properties_add_text(
         props,
         "breez_test_status",
-        "Breez Test Status",
+        "Connection Status",
         OBS_TEXT_DEFAULT
     );
-
-    // Read-only status shown after running "Test Breez Connection"
-    obs_properties_add_text(
-        props,
-        "breez_test_status",
-        "Breez Test Status",
-        OBS_TEXT_DEFAULT
-    );
+    obs_property_set_enabled(statusProp, false);  // Make read-only
     
     return props;
 }

@@ -93,17 +93,21 @@ bool BreezService::initialize(const QString& apiKey, const QString& sparkUrl,
         return false;
     }
     
-    if (sparkUrl.isEmpty()) {
-        m_lastError = "Spark URL cannot be empty";
-        qWarning() << m_lastError;
-        emit errorOccurred(m_lastError);
-        return false;
-    }
+    // Spark URL is now OPTIONAL - only required for custom Spark wallet
+    // For standard Breez nodeless, only API key is needed
     
-    // Store credentials
+    // Store API key
     m_apiKey = apiKey;
-    m_sparkUrl = sparkUrl.endsWith('/') ? sparkUrl.left(sparkUrl.length() - 1) : sparkUrl;
-    m_sparkAccessKey = sparkAccessKey;
+    
+    // Spark URL and access key are OPTIONAL for custom Spark wallet
+    // If not provided, Breez SDK will use default nodeless configuration
+    if (!sparkUrl.isEmpty()) {
+        m_sparkUrl = sparkUrl.endsWith('/') ? sparkUrl.left(sparkUrl.length() - 1) : sparkUrl;
+        m_sparkAccessKey = sparkAccessKey;
+        qInfo() << "Using custom Spark wallet at" << m_sparkUrl;
+    } else {
+        qInfo() << "Using Breez default nodeless configuration (no custom Spark wallet)";
+    }
     
     qInfo() << "Initializing BreezService with Spark at" << m_sparkUrl;
     qInfo() << "network=" << network;

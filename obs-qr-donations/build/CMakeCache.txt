@@ -15,6 +15,9 @@
 ########################
 
 //No help, variable specified on the command line.
+BREEZ_STUB_SIMULATE:UNINITIALIZED=ON
+
+//No help, variable specified on the command line.
 BREEZ_USE_STUB:UNINITIALIZED=ON
 
 //Semicolon separated list of supported configuration types, only
