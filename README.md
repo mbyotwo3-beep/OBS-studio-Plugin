@@ -203,6 +203,5 @@ For support, please [open an issue](https://github.com/yourusername/obs-qr-donat
 
 If you find this plugin useful, consider supporting its development:
 
-- **Bitcoin**: `1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa`
-- **Ethereum**: `0x71C7656EC7ab88b098defB751B7401B5f6d8976F`
-- **Litecoin**: `Lg6rHZx5w1Z4LgYzKq3rKq5hJ3Nk5XqN2J`
+- **Bitcoin**: bc1qycuvag85k5ndmrjlpufq3mlsr28ylnffv7k92522afrej7lhag8q0czmwp
+
