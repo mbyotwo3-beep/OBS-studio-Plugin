@@ -8,36 +8,27 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 
 # Find required packages
-find_package(Qt6 COMPONENTS Widgets Svg Network REQUIRED)
+find_package(Qt6 COMPONENTS Widgets Svg Network Multimedia REQUIRED)
 find_package(LibOBS REQUIRED)
 find_package(obs-frontend-api REQUIRED)
 
-# Breez SDK Spark setup
+# Breez SDK setup
 # Allow forcing the stub or overriding detection for easier local testing/CI
-option(BREEZ_USE_STUB "Force using the Breez stub implementation even if the SDK is present" OFF)
+option(BREEZ_USE_STUB "Force using the Breez stub implementation even if the SDK is present" ON)
 option(BREEZ_STUB_SIMULATE "When using the Breez stub, simulate invoice creation and sends for UI testing" ON)
-set(BREEZ_SDK_PATH "${CMAKE_CURRENT_SOURCE_DIR}/third_party/breez_sdk" CACHE PATH "Path to Breez SDK Spark")
+set(BREEZ_SDK_PATH "${CMAKE_CURRENT_SOURCE_DIR}/third_party/breez_sdk" CACHE PATH "Path to Breez SDK")
 
 if(BREEZ_USE_STUB)
     message(WARNING "BREEZ_USE_STUB is ON — forcing use of the Breez stub implementation")
     set(BREEZ_SDK_FOUND FALSE)
 else()
-    if(EXISTS "${BREEZ_SDK_PATH}/CMakeLists.txt")
+    if(EXISTS "${BREEZ_SDK_PATH}")
         add_subdirectory(${BREEZ_SDK_PATH} breez_sdk)
         set(BREEZ_SDK_FOUND TRUE)
-        message(STATUS "Breez SDK Spark found at ${BREEZ_SDK_PATH}")
+        message(STATUS "Breez SDK found at ${BREEZ_SDK_PATH}")
         add_compile_definitions(HAVE_BREEZ_SDK)
-        add_compile_definitions(BREEZ_SDK_SPARK)
     else()
-        message(WARNING "========================================")
-        message(WARNING "Breez SDK Spark not found at ${BREEZ_SDK_PATH}")
-        message(WARNING "Lightning/Spark wallet features will be disabled.")
-        message(WARNING "")
-        message(WARNING "To enable Spark SDK:")
-        message(WARNING "1. Clone the SDK: git clone https://github.com/breez/spark-sdk.git third_party/breez_sdk")
-        message(WARNING "2. Run setup script: scripts/setup_spark_sdk.bat (Windows) or scripts/setup_spark_sdk.sh (Linux/Mac)")
-        message(WARNING "3. Reconfigure CMake")
-        message(WARNING "========================================")
+        message(WARNING "Breez SDK not found at ${BREEZ_SDK_PATH}. Spark wallet features will be disabled.")
         set(BREEZ_SDK_FOUND FALSE)
     endif()
 endif()
@@ -78,8 +69,6 @@ set(SOURCES
     src/qr-generator.hpp
     src/asset-manager.cpp
     src/asset-manager.hpp
-    src/donation-effect.cpp
-    src/donation-effect.hpp
 )
 
 # UI files
@@ -112,6 +101,7 @@ target_link_libraries(${PLUGIN_NAME} PRIVATE
     Qt6::Widgets
     Qt6::Svg
     Qt6::Network
+    Qt6::Multimedia
     OBS::libobs
     OBS::frontend-api
 )

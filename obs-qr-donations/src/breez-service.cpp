@@ -10,14 +10,13 @@
 #include <QtConcurrent>
 #include <QThread>
 #include <QSet>
-#include <QDateTime>
-#include <QSslError>
 
 // Breez SDK includes (only available when compiled with the SDK)
 #ifdef HAVE_BREEZ_SDK
-#include <breez_sdk_spark/breez_sdk_spark.h>
-using namespace breez_sdk_spark;
+#include <breez_sdk/breez_sdk.h>
 #endif
+
+using namespace breez_sdk;
 
 BreezService& BreezService::instance() {
     static BreezService instance;
@@ -48,8 +47,8 @@ BreezService::BreezService(QObject *parent)
     connect(&m_retryTimer, &QTimer::timeout, this, &BreezService::retryInitialization);
     
     // Set up network configuration
-    m_networkManager->setRedirectPolicy(QNetworkRequest::NoLessSafeRedirectPolicy);
-    m_networkManager->setTransferTimeout(30000); // 30 second timeout
+    m_networkManager.setRedirectPolicy(QNetworkRequest::NoLessSafeRedirectPolicy);
+    m_networkManager.setTransferTimeout(30000); // 30 second timeout
     
     // Connect network error handling
     connect(m_networkManager, &QNetworkAccessManager::sslErrors, 
@@ -93,21 +92,17 @@ bool BreezService::initialize(const QString& apiKey, const QString& sparkUrl,
         return false;
     }
     
-    // Spark URL is now OPTIONAL - only required for custom Spark wallet
-    // For standard Breez nodeless, only API key is needed
-    
-    // Store API key
-    m_apiKey = apiKey;
-    
-    // Spark URL and access key are OPTIONAL for custom Spark wallet
-    // If not provided, Breez SDK will use default nodeless configuration
-    if (!sparkUrl.isEmpty()) {
-        m_sparkUrl = sparkUrl.endsWith('/') ? sparkUrl.left(sparkUrl.length() - 1) : sparkUrl;
-        m_sparkAccessKey = sparkAccessKey;
-        qInfo() << "Using custom Spark wallet at" << m_sparkUrl;
-    } else {
-        qInfo() << "Using Breez default nodeless configuration (no custom Spark wallet)";
+    if (sparkUrl.isEmpty()) {
+        m_lastError = "Spark URL cannot be empty";
+        qWarning() << m_lastError;
+        emit errorOccurred(m_lastError);
+        return false;
     }
+    
+    // Store credentials
+    m_apiKey = apiKey;
+    m_sparkUrl = sparkUrl.endsWith('/') ? sparkUrl.left(sparkUrl.length() - 1) : sparkUrl;
+    m_sparkAccessKey = sparkAccessKey;
     
     qInfo() << "Initializing BreezService with Spark at" << m_sparkUrl;
     qInfo() << "network=" << network;
@@ -126,16 +121,16 @@ bool BreezService::initialize(const QString& apiKey, const QString& sparkUrl,
     
     try {
         // Prepare configuration for the SDK
-        breez_sdk_spark::Config config;
+        breez_sdk::Config config;
         config.working_dir = m_workingDir.toStdString();
         config.api_key = m_apiKey.toStdString();
         // Choose network (Bitcoin or Liquid)
         if (network.compare("liquid", Qt::CaseInsensitive) == 0) {
-            config.network = breez_sdk_spark::Network::LIQUID;
+            config.network = breez_sdk::Network::LIQUID;
         } else {
-            config.network = breez_sdk_spark::Network::BITCOIN;
+            config.network = breez_sdk::Network::BITCOIN;
         }
-        config.log_level = breez_sdk_spark::LogLevel::DEBUG;
+        config.log_level = breez_sdk::LogLevel::DEBUG;
 
         // Set up Spark wallet configuration if provided (requires ENABLE_SPARK_WALLET)
     #ifdef ENABLE_SPARK_WALLET
@@ -146,11 +141,11 @@ bool BreezService::initialize(const QString& apiKey, const QString& sparkUrl,
                 throw std::runtime_error("Invalid Spark wallet URL");
             }
 
-            breez_sdk_spark::SparkConfig sparkCfg;
+            breez_sdk::SparkConfig sparkCfg;
             sparkCfg.url = m_sparkUrl.toStdString();
             sparkCfg.access_key = m_sparkAccessKey.toStdString();
 
-            config.default_wallet = breez_sdk_spark::WalletType::SPARK;
+            config.default_wallet = breez_sdk::WalletType::SPARK;
             config.spark_config = sparkCfg;
             qDebug() << "Spark wallet configured successfully";
         }
@@ -164,7 +159,7 @@ bool BreezService::initialize(const QString& apiKey, const QString& sparkUrl,
 
         // Create SDK instance
         qDebug() << "Creating Breez SDK instance...";
-        m_sdk = std::make_unique<breez_sdk_spark::SDK>(config);
+        m_sdk = std::make_unique<breez_sdk::SDK>(config);
 
         if (!m_sdk) {
             throw std::runtime_error("Failed to create Breez SDK instance");
@@ -333,18 +328,6 @@ QString BreezService::createInvoice(qint64 amountSats, const QString& descriptio
     
     qDebug() << "Creating invoice for" << amountSats << "sats, expires in" << expirySec << "seconds";
     
-    if (amountSats < 0) {
-        const QString errorMsg = "Invalid amount: amount cannot be negative";
-        qWarning() << errorMsg;
-        emit errorOccurred(errorMsg);
-        return "";
-    }
-    
-    if (expirySec <= 0) {
-        qWarning() << "Invalid expiry time, using default (1 hour)";
-        expirySec = 3600; // Default to 1 hour
-    }
-    
     try {
         // Create invoice request
         CreateInvoiceRequest req;
@@ -460,7 +443,6 @@ void BreezService::onPaymentReceived(const InvoicePaid& payment) {
 }
 
 void BreezService::checkForPayments() {
-#ifdef HAVE_BREEZ_SDK
     if (!m_initialized || !m_sdk) {
         qDebug() << "Skipping payment check - service not initialized";
         return;
@@ -476,23 +458,25 @@ void BreezService::checkForPayments() {
     
     try {
         // Check for new payments
-        auto payments = m_sdk->list_payments({});
+        auto payments = m_sdk->listPayments(ListPaymentsRequest{});
+        if (!payments) {
+            qWarning() << "Failed to list payments";
+            return;
+        }
         
         // Process new payments
-        for (const auto& payment : payments) {
-            if (payment.status == "complete" && !payment.payment_preimage.empty()) {
+        for (const auto& payment : *payments) {
+            if (payment.status == PaymentStatus::COMPLETE && 
+                payment.payment_type == PaymentType::RECEIVE) {
                 // Check if we've already processed this payment
-                QString paymentId = QString::fromStdString(payment.payment_hash);
+                QString paymentId = QString::fromStdString(payment.id);
                 if (!m_processedPayments.contains(paymentId)) {
                     m_processedPayments.insert(paymentId);
-                    
-                    // This is a completed payment
-                    InvoicePaid event;
-                    event.amount_msat = payment.amount_msat;
-                    event.payment_hash = payment.payment_hash;
-                    event.description = payment.description;
-                    
-                    onPaymentReceived(event);
+                    onPaymentReceived(InvoicePaid{
+                        payment.payment_hash,
+                        payment.amount_msat,
+                        payment.description
+                    });
                 }
             }
         }
@@ -504,26 +488,23 @@ void BreezService::checkForPayments() {
         }
         
     } catch (const std::exception& e) {
-        qWarning() << "Error checking for payments:" << e.what();
-        emit errorOccurred(QString("Error checking for payments: %1").arg(e.what()));
+        qCritical() << QString("Error checking for payments: %1").arg(e.what());
         // Back off on errors
         m_pollingTimer.setInterval(qMin(m_pollingTimer.interval() * 2, 60000)); // Max 1 minute
+        emit errorOccurred(QString("Error checking for payments: %1").arg(e.what()));
     }
-#endif
 }
 
 void BreezService::retryInitialization() {
-    if (m_initialized) {
+    if (m_retryCount >= 3) {
+        qWarning() << "Max retry attempts reached for Breez initialization";
+        emit errorOccurred("Failed to initialize after multiple attempts");
         return;
     }
     
     m_retryCount++;
-    if (m_retryCount > 3) {
-        qCritical() << "Failed to initialize Breez SDK after" << m_retryCount << "attempts";
-        emit errorOccurred("Failed to initialize Breez SDK after multiple attempts");
-        return;
-    }
+    qInfo() << "Retrying Breez initialization, attempt" << m_retryCount;
     
-    qInfo() << "Retrying Breez SDK initialization (attempt" << m_retryCount << ")";
-    // The initialization will be retried when the user tries again or when the timer fires
+    // Try to re-initialize with stored credentials
+    initialize(m_apiKey, m_sparkUrl, m_sparkAccessKey, "bitcoin");
 }

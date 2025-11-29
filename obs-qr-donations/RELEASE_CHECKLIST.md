@@ -40,7 +40,8 @@
 ### Key UX Features
 - 📱 **Responsive**: Works at any size automatically
 - 🔄 **Auto-rotating**: Cycles between payment methods
-- 🎨 **Visual feedback**: Effects show when paid
+- 🎆 **Visual feedback**: Green flash when paid
+- 🔔 **Audio alerts**: Optional sound notifications
 - 💡 **Built-in help**: Clear error messages
 - 📊 **Smart defaults**: Works out of the box
 
@@ -87,9 +88,10 @@
 
 ## Features
 - ⚡ Lightning Network (Breez SDK)
-- 🎆 Visual donation effects
+- 🎆 Visual flash effects on donation
+- 🔔 Optional audio notifications
 - 📱 Fully responsive display
-- 🎨 Color-coded notifications
+- 🎨 Color-coded feedback
 
 ## Installation
 1. Download ZIP
@@ -116,7 +118,8 @@ Before release:
 - [ ] Plugin loads in OBS
 - [ ] QR codes display correctly
 - [ ] Resize works at all sizes
-- [ ] Donation effects trigger correctly
+- [ ] Flash effects trigger on donation
+- [ ] Audio notifications work (when enabled)
 - [ ] Documentation is clear
 - [ ] No obvious bugs
 
@@ -128,10 +131,10 @@ Before release:
 ### Features for Store Listing
 - One-click installation
 - Works at any size or aspect ratio
-- Stunning visual effects when you get paid
+- Flash effects and audio alerts when you get paid
 - Lightning Network for instant donations
 - Bitcoin and Liquid support
-- Color-coded by donation amount
+- Optional sound notifications
 - No configuration needed to get started
 - Free and open source
 

@@ -3,11 +3,10 @@
 #include <QObject>
 #include <QString>
 #include <QTimer>
-#include <QSet>
 #include <memory>
 
 // Forward declarations
-namespace breez_sdk_spark {
+namespace breez_sdk {
 class SDK;
 struct InvoicePaid;
 struct SparkConfig;
@@ -60,6 +59,7 @@ signals:
     
 private slots:
     void checkForPayments();
+    void retryInitialization();
     
 private:
     BreezService(QObject *parent = nullptr);
@@ -72,21 +72,21 @@ private:
     BreezService& operator=(BreezService&&) = delete;
     
     void setupPaymentListener();
-    void onPaymentReceived(const breez_sdk_spark::InvoicePaid& payment);
+    void onPaymentReceived(const breez_sdk::InvoicePaid& payment);
     
-    std::unique_ptr<breez_sdk_spark::SDK> m_sdk;
-    std::unique_ptr<breez_sdk_spark::SparkConfig> m_sparkConfig;
+    std::unique_ptr<breez_sdk::SDK> m_sdk;
+    std::unique_ptr<breez_sdk::SparkConfig> m_sparkConfig;
     QTimer m_pollingTimer;
-    QTimer m_retryTimer;
     bool m_initialized = false;
-    int m_retryCount = 0;
     QString m_apiKey;
     QString m_workingDir;
+    
+    // Additional state for error handling and robustness
+    QTimer m_retryTimer;
+    int m_retryCount = 0;
     QString m_lastError;
     QString m_sparkUrl;
     QString m_sparkAccessKey;
     QSet<QString> m_processedPayments;
-    class QNetworkAccessManager* m_networkManager;
-    
-    void retryInitialization();
+    QNetworkAccessManager *m_networkManager = nullptr;
 };

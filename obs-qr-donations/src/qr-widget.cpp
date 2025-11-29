@@ -2,7 +2,6 @@
 #include "qr-generator.hpp"
 #include "breez-service.hpp"
 #include "manage-wallet-dialog.hpp"
-#include "donation-effect.hpp"
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QLabel>
@@ -232,6 +231,33 @@ QRDonationsWidget::QRDonationsWidget(QWidget *parent)
     mainLayout->setSpacing(10);
     mainLayout->setContentsMargins(15, 15, 15, 15);
     
+    // Create flash overlay (hidden by default)
+    d->flashOverlay = new QLabel(this);
+    d->flashOverlay->setAlignment(Qt::AlignCenter);
+    d->flashOverlay->setStyleSheet(
+        "QLabel { "
+        "  background-color: rgba(76, 175, 80, 200); "
+        "  color: white; "
+        "  font-size: 18px; "
+        "  font-weight: bold; "
+        "  padding: 20px; "
+        "  border-radius: 8px; "
+        "}"
+    );
+    d->flashOverlay->hide();
+    d->flashOverlay->raise(); // Keep on top
+    
+    // Create timer for flash effect
+    d->flashTimer = new QTimer(this);
+    d->flashTimer->setSingleShot(true);
+    connect(d->flashTimer, &QTimer::timeout, this, [this]() {
+        if (d->flashOverlay) {
+            d->flashOverlay->hide();
+            // Reset background flash
+            setStyleSheet("");
+        }
+    });
+    
     // Initialize with default values
     setAddress("BTC", "");
     // Start rotation
@@ -395,41 +421,14 @@ void QRDonationsWidget::updateQRCode() {
         return;
     }
     
-    // Calculate responsive QR code size based on widget dimensions and aspect ratio
-    int widgetWidth = width();
-    int widgetHeight = height();
-    
-    // Determine aspect ratio and calculate optimal QR size
-    double aspectRatio = static_cast<double>(widgetWidth) / widgetHeight;
-    int qrSize;
-    
-    if (aspectRatio > 1.7) {
-        // Wide aspect (21:9, etc.) - use height-based sizing
-        qrSize = qMin(static_cast<int>(widgetHeight * 0.6), widgetWidth / 3);
-    } else if (aspectRatio < 0.7) {
-        // Vertical aspect (9:16, etc.) - use width-based sizing
-        qrSize = static_cast<int>(widgetWidth * 0.7);
-    } else {
-        // Standard aspect (16:9, 4:3, etc.) - balanced sizing
-        qrSize = qMin(widgetWidth, widgetHeight) / 2;
-    }
-    
-    // Ensure QR code stays within scannable range (150-800 pixels)
-    qrSize = qMax(150, qMin(800, qrSize));
-    
-    // Apply padding
-    int padding = 20;
-    int finalSize = qrSize - padding;
-    
     // Update Lightning QR code
     if (!d->lightningInvoice.empty()) {
         QImage lightningQR = QRGenerator::generateQRCode(
             d->lightningInvoice,
-            finalSize,
-            finalSize
+            d->lightningQRLabel->width() - 20,
+            d->lightningQRLabel->height() - 20
         );
         d->lightningQRLabel->setPixmap(QPixmap::fromImage(lightningQR));
-        d->lightningQRLabel->setFixedSize(qrSize, qrSize);
     }
     
     // Update Bitcoin QR code
@@ -444,11 +443,10 @@ void QRDonationsWidget::updateQRCode() {
         
         QImage bitcoinQR = QRGenerator::generateQRCode(
             qrText.toStdString(),
-            finalSize,
-            finalSize
+            d->bitcoinQRLabel->width() - 20,
+            d->bitcoinQRLabel->height() - 20
         );
         d->bitcoinQRLabel->setPixmap(QPixmap::fromImage(bitcoinQR));
-        d->bitcoinQRLabel->setFixedSize(qrSize, qrSize);
     }
 
     // Update Liquid QR code
@@ -463,18 +461,11 @@ void QRDonationsWidget::updateQRCode() {
 
         QImage liquidQR = QRGenerator::generateQRCode(
             qrText.toStdString(),
-            finalSize,
-            finalSize
+            d->liquidQRLabel->width() - 20,
+            d->liquidQRLabel->height() - 20
         );
         d->liquidQRLabel->setPixmap(QPixmap::fromImage(liquidQR));
-        d->liquidQRLabel->setFixedSize(qrSize, qrSize);
     }
-    
-    // Update font sizes based on widget size for better readability
-    int baseFontSize = qMax(10, qMin(16, widgetHeight / 40));
-    QFont labelFont = d->amountHintLabel->font();
-    labelFont.setPointSize(baseFontSize);
-    d->amountHintLabel->setFont(labelFont);
     
     // Update amount hint
     if (d->amountSats > 0) {
@@ -568,28 +559,37 @@ void QRDonationsWidget::setLightningStatus(const QString &status, bool ok) {
 }
 
 void QRDonationsWidget::onPaymentReceived(qint64 amountSats, const QString &paymentHash, const QString &memo) {
-    // Create and show donation effect
-    DonationEffect *effect = new DonationEffect(this);
-    effect->setParticleCount(qMin(100, qMax(30, static_cast<int>(amountSats / 100)))); // Scale particles with amount
-    effect->setDuration(4000); // 4 seconds
-    
-    // Convert to currency format
-    double btcAmount = amountSats / 100000000.0;
-    QString displayAmount;
-    if (amountSats >= 100000) {
-        displayAmount = QString::number(btcAmount, 'f', 3) + " BTC";
-    } else {
-        displayAmount = QString::number(amountSats) + " sats";
+    // Update UI to show the payment with flash effect instead of blocking message box
+    QString message = QString("🎉 Received %1 sats!").arg(amountSats);
+    if (!memo.isEmpty()) {
+        message += QString("\n%1").arg(memo);
     }
     
-    effect->show();
-    effect->triggerEffect(amountSats, displayAmount, memo);
+    // Show flash overlay
+    if (d->flashOverlay) {
+        d->flashOverlay->setText(message);
+        
+        // Position overlay in the center of the widget
+        int overlayWidth = width() * 0.8;
+        int overlayHeight = 100;
+        d->flashOverlay->setGeometry(
+            (width() - overlayWidth) / 2,
+            (height() - overlayHeight) / 2,
+            overlayWidth,
+            overlayHeight
+        );
+        
+        d->flashOverlay->show();
+        d->flashOverlay->raise();
+    }
     
-    // Auto-delete after effect completes
-    QTimer::singleShot(5000, effect, &DonationEffect::deleteLater);
+    // Flash background
+    setStyleSheet("QRDonationsWidget { background-color: rgba(76, 175, 80, 50); }");
     
-    // Log to console
-    qInfo() << "Payment received:" << amountSats << "sats, hash:" << paymentHash;
+    // Hide overlay and reset background after 4 seconds
+    if (d->flashTimer) {
+        d->flashTimer->start(4000);
+    }
     
     // Generate a new invoice for the next payment
     generateInvoices();

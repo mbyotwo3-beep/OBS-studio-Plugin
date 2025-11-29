@@ -116,6 +116,10 @@ private:
         QVBoxLayout *mainLayout = nullptr;
         QTimer *rotationTimer = nullptr;
         int rotationIndex = 0;
+        
+        // Flash effect for donation feedback
+        QLabel *flashOverlay = nullptr;
+        QTimer *flashTimer = nullptr;
     };
     std::unique_ptr<Private> d;
 };

@@ -5,6 +5,7 @@
 #include <QWidget>
 #include <string>
 #include <memory>
+#include <QSoundEffect>
 
 // Forward declarations
 class QRDonationsWidget;
@@ -38,7 +39,11 @@ private:
     std::string currentAddress;
     bool showBalance;
     bool showAssetSymbol;
-    bool enableEffects;
+    
+    // Audio feedback
+    bool enableSound;
+    QString soundFilePath;
+    QSoundEffect *soundEffect;
 };
 
 // Source callbacks

@@ -39,11 +39,11 @@ The plugin rotates between three methods every 10 seconds:
 - 💧 **Liquid** (fast, confidential)
 
 ### When Someone Donates
-Automatic celebration effects:
-- 🎆 Particle burst animation
-- 💬 Pop-up showing amount
-- 🎨 Colors based on donation size
-- ⏱️ 4-second animation
+Automatic feedback:
+- 🎆 Green flash overlay on widget
+- 💬 "🎉 Received X sats!" message
+- 🔔 Optional sound notification
+- ⏱️ 4-second flash duration
 
 | 720p | 300 x 450 px | Top-right corner |
 | Full screen alert | 1920 x 400 px | Center |
@@ -67,9 +67,9 @@ Automatic celebration effects:
 - ✅ Make sure Spark wallet is configured
 
 ### Donation Effects Not Showing
-- ✅ Effects only show when payment is received
+- ✅ Flash appears on the widget itself (not OBS scene)
 - ✅ Test with small payment first
-- ✅ Check that source is on top layer
+- ✅ Check that widget is open/visible
 
 ### Plugin Not in OBS
 - ✅ Run the installer again
@@ -147,6 +147,20 @@ If you see "Demo Mode: Payments are SIMULATED":
 - ✅ Verify addresses before streaming
 - ✅ Keep Breez API key private
 
+## 🔔 Audio Notifications
+
+### Enable Sound on Donation
+1. Open source properties
+2. Check **"Enable Sound Notification"**
+3. Select an audio file (WAV, MP3, OGG)
+4. Donations will now play the sound!
+
+### Choosing a Sound File
+- Keep it short (1-2 seconds)
+- Not too loud or jarring
+- Test volume before streaming
+- Disable if you prefer silent donations
+
 ## 📞 Getting Help
 
 ### Check Logs
@@ -169,6 +183,6 @@ Your donation QR is ready to earn! Remember:
 - 📍 Position prominently
 - 💬 Mention to viewers
 - 🙏 Thank donors
-- 🎨 Enjoy the particle effects!
+- 🎆 Enjoy the flash effects!
 
 **Happy streaming!** 🚀

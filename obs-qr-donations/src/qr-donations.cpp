@@ -35,16 +35,14 @@ QRDonationsSource::QRDonationsSource(obs_data_t *settings, obs_source_t *source)
     , widget(nullptr)
     , showBalance(true)
     , showAssetSymbol(true)
-    , enableEffects(true)
+    , enableSound(false)
+    , soundEffect(new QSoundEffect(this))
 {
     // Get the main window for parenting our widget
     auto mainWindow = static_cast<QMainWindow *>(obs_frontend_get_main_window());
     
     // Create the widget
     widget = new QRDonationsWidget(mainWindow);
-    
-    // Visual donation effects removed for a cleaner, lightweight plugin
-    donationEffect = nullptr;
     
     // Load settings
     UpdateSource(this, settings);
@@ -56,8 +54,6 @@ QRDonationsSource::~QRDonationsSource()
         widget->hide();
         widget->deleteLater();
     }
-    
-    // No visual effects to tear down
 }
 
 void QRDonationsSource::update(obs_data_t *settings)
@@ -74,7 +70,6 @@ void QRDonationsSource::update(obs_data_t *settings)
     }
     showBalance = obs_data_get_bool(settings, "show_balance");
     showAssetSymbol = obs_data_get_bool(settings, "show_asset_symbol");
-    enableEffects = obs_data_get_bool(settings, "enable_effects");
     
     if (widget) {
         widget->setAddress(currentAsset, currentAddress);
@@ -84,16 +79,31 @@ void QRDonationsSource::update(obs_data_t *settings)
         widget->setDisplayOptions(showBalance, showAssetSymbol);
     }
     
-    // Update effect settings
-    // No donation effect customization; the plugin now focuses on QR display only.
+    // Update effect settings (deprecated, kept for backward compatibility)
+    
+    // Audio settings
+    enableSound = obs_data_get_bool(settings, "enable_sound");
+    QString newSoundFile = obs_data_get_string(settings, "sound_file");
+    
+    if (soundFilePath != newSoundFile) {
+        soundFilePath = newSoundFile;
+        if (!soundFilePath.isEmpty()) {
+            soundEffect->setSource(QUrl::fromLocalFile(soundFilePath));
+            soundEffect->setVolume(1.0f);
+        }
+    }
 }
 
 void QRDonationsSource::onDonationReceived(double amount, const QString &currency) {
-    // Effects disabled - simple notification only
-    if (enableEffects && widget) {
-        // If effects are enabled we still want to show a non-blocking notification
+    // Show notification in widget
+    if (widget) {
         qint64 amountSats = static_cast<qint64>(amount * 100000000.0);
         widget->onPaymentReceived(amountSats, QString(), currency);
+    }
+    
+    // Play sound if enabled
+    if (enableSound && soundEffect && !soundFilePath.isEmpty()) {
+        soundEffect->play();
     }
 }
 
@@ -177,7 +187,8 @@ void GetSourceDefaults(obs_data_t *settings)
     obs_data_set_default_string(settings, "breez_test_status", "");
     obs_data_set_default_bool(settings, "show_balance", true);
     obs_data_set_default_bool(settings, "show_asset_symbol", true);
-    obs_data_set_default_bool(settings, "enable_effects", true);
+    obs_data_set_default_bool(settings, "enable_sound", false);
+    obs_data_set_default_string(settings, "sound_file", "");
 }
 
 static bool TestBreezConnection(obs_properties_t *props, obs_property_t *property, obs_data_t *settings);
@@ -230,74 +241,73 @@ obs_properties_t *GetSourceProperties(void *data)
         "Show Asset Symbol"
     );
     
-    // Effect options
+    // Audio options
     obs_properties_add_bool(
         props,
-        "enable_effects",
-        "Enable Visual Effects on Donation"
+        "enable_sound",
+        "Enable Sound Notification"
+    );
+    
+    obs_properties_add_path(
+        props,
+        "sound_file",
+        "Sound File",
+        OBS_PATH_FILE,
+        "Audio Files (*.wav *.mp3 *.ogg)",
+        nullptr
     );
 
-    // === Lightning Network (Breez SDK - Nodeless) ===
+    // Breez / Spark (Lightning) settings
     obs_properties_add_bool(
         props,
         "enable_lightning",
-        "⚡ Enable Lightning Network (Breez SDK - Nodeless)"
-    );
-    
-    // Add informational text
-    obs_properties_add_text(
-        props,
-        "lightning_info",
-        "Get your free Breez API key at https://breez.technology",
-        OBS_TEXT_INFO
+        "Enable Lightning (Breez Spark)"
     );
 
-    // API Key (REQUIRED for Breez SDK)
     obs_properties_add_text(
         props,
         "breez_api_key",
-        "Breez API Key (Required)",
-        OBS_TEXT_PASSWORD  // Hide API key for security
-    );
-
-    // === Advanced: Custom Spark Wallet (Optional) ===
-    obs_properties_add_text(
-        props,
-        "spark_info",
-        "Advanced: Only needed if using custom Spark wallet (leave empty for Breez default)",
-        OBS_TEXT_INFO
+        "Breez API Key",
+        OBS_TEXT_DEFAULT
     );
 
     obs_properties_add_text(
         props,
         "spark_url",
-        "Spark Wallet URL (Optional)",
+        "Spark Wallet URL",
         OBS_TEXT_DEFAULT
     );
 
     obs_properties_add_text(
         props,
         "spark_access_key",
-        "Spark Access Key (Optional)",
-        OBS_TEXT_PASSWORD
+        "Spark Access Key",
+        OBS_TEXT_DEFAULT
     );
 
-    // Test button
+    // Button to test Breez + Spark connection
     obs_properties_add_button(
         props,
         "test_breez_connection",
-        "🔌 Test Lightning Connection",
+        "Test Breez Connection",
         TestBreezConnection
     );
 
-    // Status field (read-only)
-    auto *statusProp = obs_properties_add_text(
+    // Read-only field to show the result of the last Breez connection test
+    obs_properties_add_text(
         props,
         "breez_test_status",
-        "Connection Status",
+        "Breez Test Status",
         OBS_TEXT_DEFAULT
     );
-    obs_property_set_enabled(statusProp, false);  // Make read-only
+
+    // Read-only status shown after running "Test Breez Connection"
+    obs_properties_add_text(
+        props,
+        "breez_test_status",
+        "Breez Test Status",
+        OBS_TEXT_DEFAULT
+    );
     
     return props;
 }
