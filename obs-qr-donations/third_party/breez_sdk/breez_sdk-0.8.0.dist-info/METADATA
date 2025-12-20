@@ -1,0 +1,27 @@
+Metadata-Version: 2.4
+Name: breez_sdk
+Version: 0.8.0
+Summary: Python language bindings for the Breez SDK
+Home-page: https://github.com/breez/breez-sdk
+Author: Breez <contact@breez.technology>
+License: MIT
+Description-Content-Type: text/markdown
+Dynamic: author
+Dynamic: description
+Dynamic: description-content-type
+Dynamic: home-page
+Dynamic: license
+Dynamic: summary
+
+# Breez SDK
+Python language bindings for the [Breez SDK](https://github.com/breez/breez-sdk).
+
+## Installing
+
+```shell
+pip install breez_sdk
+```
+
+## Docs
+
+See [sdk-doc.breez.technology](https://sdk-doc.breez.technology).

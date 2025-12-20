@@ -142,14 +142,17 @@ QGroupBox::title {
     </widget>
    </item>
    <item>
-    <widget class="QLabel" name="assetLabel" alignment="Qt::AlignCenter">
+    <widget class="QLabel" name="assetLabel">
      <property name="text">
       <string>BTC</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
      </property>
     </widget>
    </item>
    <item>
-    <widget class="QLabel" name="qrCodeLabel" alignment="Qt::AlignCenter">
+    <widget class="QLabel" name="qrCodeLabel">
      <property name="text">
       <string>QR Code</string>
      </property>
@@ -159,7 +162,7 @@ QGroupBox::title {
     </widget>
    </item>
    <item>
-    <widget class="QLabel" name="addressLabel" alignment="Qt::AlignCenter">
+    <widget class="QLabel" name="addressLabel">
      <property name="text">
       <string>Wallet Address</string>
      </property>
@@ -172,9 +175,12 @@ QGroupBox::title {
     </widget>
    </item>
    <item>
-    <widget class="QLabel" name="balanceLabel" alignment="Qt::AlignCenter">
+    <widget class="QLabel" name="balanceLabel">
      <property name="text">
       <string>Balance: 0.0 BTC</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
      </property>
     </widget>
    </item>

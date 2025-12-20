@@ -1,25 +1,23 @@
-#include <gtest/gtest.h>
 #include "../src/breez-service.hpp"
+#include <gtest/gtest.h>
 
 class BreezStubTest : public ::testing::Test {
 protected:
-    void SetUp() override {
-        service = &BreezService::instance();
-    }
+  void SetUp() override { service = &BreezService::instance(); }
 
-    BreezService *service;
+  BreezService *service;
 };
 
 TEST_F(BreezStubTest, InitializeWithoutSdk) {
-    // When compiled without Breez SDK, initialize should return false. If SDK is present
-    // this test is not applicable and should be skipped.
+  // When compiled without Breez SDK, initialize should return false. If SDK is
+  // present this test is not applicable and should be skipped.
 #ifdef HAVE_BREEZ_SDK
-    GTEST_SKIP() << "Skipping stub test - Breez SDK detected";
+  GTEST_SKIP() << "Skipping stub test - Breez SDK detected";
 #endif
-    QString apiKey = "";
-    QString url = "";
-    QString key = "";
+  QString apiKey = "";
+  QString url = "";
+  QString key = "";
 
-    bool ok = service->initialize(apiKey, url, key, "bitcoin");
-    EXPECT_FALSE(ok);
+  bool ok = service->initialize(apiKey, url, key, "bitcoin");
+  EXPECT_FALSE(ok);
 }

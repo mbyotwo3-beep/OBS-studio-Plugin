@@ -15,6 +15,6 @@
         <file alias="icons/checkmark.png">icons/checkmark.png</file>
         
         <!-- UI assets -->
-        <file>ui/qr-donations.ui</file>
+        <file alias="ui/qr-donations.ui">../ui/qr-donations.ui</file>
     </qresource>
 </RCC>
