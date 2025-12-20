@@ -71,7 +71,7 @@ A professional OBS Studio plugin that enables streamers to receive cryptocurrenc
 
 ## Support & Contributing
 
-- **Issues:** [Open an issue on GitHub](https://github.com/yourusername/obs-qr-donations/issues)
+- **Issues:** [Open an issue on GitHub](https://github.com/mbyotwo3-beep/OBS-studio-Plugin/issues)
 - **License:** MIT License
 
 ---
